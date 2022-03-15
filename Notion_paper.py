@@ -4,7 +4,9 @@
 # In[1]:
 
 
-import json, requests, arxiv
+import json
+import requests
+import arxiv
 from collections import defaultdict
 import numpy as np
 from multiprocessing.pool import ThreadPool
@@ -38,7 +40,8 @@ res = json.loads(res.text)
 # In[4]:
 
 
-existing_titles = [r['properties']['Name']['title'][0]['plain_text'] for r in res['results']]
+existing_titles = [r['properties']['Name']['title'][0]['plain_text']
+                   for r in res['results'] if len(r['properties']['Name']['title'][0]) > 0]
 
 
 # In[5]:
@@ -66,16 +69,16 @@ src_proto = res['properties']['Source'].copy()
 
 def make_title(title):
     return {
-      "Name": {
-        "title": [
-          {
-            "type": "text",
-            "text": {
-              "content": str(title)
-            }
-          }
-        ]
-      }
+        "Name": {
+            "title": [
+                {
+                    "type": "text",
+                    "text": {
+                        "content": str(title)
+                    }
+                }
+            ]
+        }
     }
 
 
@@ -113,10 +116,11 @@ def make_text(proto, text):
 
 
 def extract_options(proto):
-    m_options = {dic['name'].lower(): dic['id'] for dic in proto['multi_select']['options']}
+    m_options = {dic['name'].lower(): dic['id']
+                 for dic in proto['multi_select']['options']}
     options = defaultdict(lambda: None)
     options.update(m_options)
-    
+
     return options
 
 
@@ -130,7 +134,7 @@ def make_multi_sel(proto, sel):
     sel = list(set(sel))
     if None in sel:
         sel.remove(None)
-        
+
     return {
         proto['id']: {
             'multi_select': [{'id': sel_id} for sel_id in sel]
@@ -154,7 +158,7 @@ def create_page(properties={}):
 
     res = requests.request('POST', url, headers=headers, json=payload)
     res = json.loads(res.text)
-    
+
     return res['id']
 
 
@@ -183,24 +187,23 @@ def find_lonest_common(str1, str2):
             dp[i][j] = res
 
     dp = np.array(dp)
-    
+
     i, j = np.unravel_index(dp.argmax(), dp.shape)
     len_common = dp[i, j]
 
-    common_str = str2[j-len_common+1 : j+1]
-    
+    common_str = str2[j-len_common+1: j+1]
+
     # check before and after non-str
     check = True
-    
+
     if i - len_common >= 0:
         if str1[i - len_common].isalpha():
             check = False
-            
+
     if i + 1 < len1:
         if str1[i + 1].isalpha():
             check = False
 
-    
     return common_str, check
 
 
@@ -223,7 +226,7 @@ def get_paper_info(arxiv_url):
         src_options = extract_options(src_proto)
         src = [find_lonest_common(comment, opt) for opt in src_options]
         src = [t_src for t_src, check in src if check]
-    
+
     return title, link, date, src
 
 
@@ -243,12 +246,12 @@ def promt_for_tags():
     print("\nChoose, separate by space")
     choices = input()
     choices = [opt_dict[int(c)] for c in choices.split() if c.isdigit()]
-    
+
     choices = list(set(choices))
-    
+
     if None in choices:
         choices.remove(None)
-    
+
     return choices
 
 
@@ -259,7 +262,8 @@ def deal_paper():
     with ThreadPool(processes=1) as pool:
         print('\n', '=' * 30)
         url = input("Paper url: ")
-        async_result = pool.apply_async(get_paper_info, (url,)) # tuple of args for foo
+        async_result = pool.apply_async(
+            get_paper_info, (url,))  # tuple of args for foo
 
         choices = promt_for_tags()
 
@@ -299,7 +303,7 @@ while True:
 
     try:
         deal_paper()
-    
+
     except TimeoutError as e:
         print("Problem getting the link")
     except Exception as e:
@@ -307,7 +311,3 @@ while True:
 
 
 # In[ ]:
-
-
-
-
