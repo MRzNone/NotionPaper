@@ -3,7 +3,6 @@
 
 # In[1]:
 
-
 import json
 import requests
 import arxiv
@@ -11,9 +10,7 @@ from collections import defaultdict
 import numpy as np
 from multiprocessing.pool import ThreadPool
 
-
 # In[2]:
-
 
 secret = 'secret_kUZyO5ppcfCAdTomWG96yxx4KhhESaD1tVn99nHxwFr'
 
@@ -26,43 +23,34 @@ headers = {
     "Authorization": F"Bearer {secret}",
 }
 
-
 # In[3]:
 
-
 url = F"https://api.notion.com/v1/databases/{databaseId}/query"
-
 
 res = requests.request('POST', url, headers=headers)
 res = json.loads(res.text)
 
-
 # In[4]:
 
-
-existing_titles = [r['properties']['Name']['title'][0]['plain_text']
-                   for r in res['results'] if len(r['properties']['Name']['title'][0]) > 0]
-
+existing_titles = [
+    r['properties']['Name']['title'][0]['plain_text'] for r in res['results']
+    if len(r['properties']['Name']['title']) > 0
+]
 
 # In[5]:
-
 
 # Query database format
 url = F"https://api.notion.com/v1/databases/{databaseId}"
 
-
 res = requests.request('GET', url, headers=headers)
 res = json.loads(res.text)
 
-
 # In[6]:
-
 
 link_proto = res['properties']['Link'].copy()
 date_proto = res['properties']['Date'].copy()
 tags_proto = res['properties']['Tags'].copy()
 src_proto = res['properties']['Source'].copy()
-
 
 # In[7]:
 
@@ -70,14 +58,12 @@ src_proto = res['properties']['Source'].copy()
 def make_title(title):
     return {
         "Name": {
-            "title": [
-                {
-                    "type": "text",
-                    "text": {
-                        "content": str(title)
-                    }
+            "title": [{
+                "type": "text",
+                "text": {
+                    "content": str(title)
                 }
-            ]
+            }]
         }
     }
 
@@ -100,14 +86,12 @@ def make_url(proto, url):
 def make_text(proto, text):
     return {
         proto['id']: {
-            'rich_text': [
-                {
-                    'type': 'text',
-                    'text': {
-                        'content': str(text)
-                    }
+            'rich_text': [{
+                'type': 'text',
+                'text': {
+                    'content': str(text)
                 }
-            ]
+            }]
         }
     }
 
@@ -116,8 +100,10 @@ def make_text(proto, text):
 
 
 def extract_options(proto):
-    m_options = {dic['name'].lower(): dic['id']
-                 for dic in proto['multi_select']['options']}
+    m_options = {
+        dic['name'].lower(): dic['id']
+        for dic in proto['multi_select']['options']
+    }
     options = defaultdict(lambda: None)
     options.update(m_options)
 
@@ -135,11 +121,7 @@ def make_multi_sel(proto, sel):
     if None in sel:
         sel.remove(None)
 
-    return {
-        proto['id']: {
-            'multi_select': [{'id': sel_id} for sel_id in sel]
-        }
-    }
+    return {proto['id']: {'multi_select': [{'id': sel_id} for sel_id in sel]}}
 
 
 # In[12]:
@@ -182,7 +164,7 @@ def find_lonest_common(str1, str2):
 
             # check prev
             if i > 0 and j > 0:
-                res += dp[i-1][j-1]
+                res += dp[i - 1][j - 1]
 
             dp[i][j] = res
 
@@ -191,7 +173,7 @@ def find_lonest_common(str1, str2):
     i, j = np.unravel_index(dp.argmax(), dp.shape)
     len_common = dp[i, j]
 
-    common_str = str2[j-len_common+1: j+1]
+    common_str = str2[j - len_common + 1:j + 1]
 
     # check before and after non-str
     check = True
@@ -262,8 +244,8 @@ def deal_paper():
     with ThreadPool(processes=1) as pool:
         print('\n', '=' * 30)
         url = input("Paper url: ")
-        async_result = pool.apply_async(
-            get_paper_info, (url,))  # tuple of args for foo
+        async_result = pool.apply_async(get_paper_info,
+                                        (url, ))  # tuple of args for foo
 
         choices = promt_for_tags()
 
@@ -298,7 +280,6 @@ Choices: {', '.join(choices)}
 
 # In[ ]:
 
-
 while True:
 
     try:
@@ -308,6 +289,5 @@ while True:
         print("Problem getting the link")
     except Exception as e:
         print(e)
-
 
 # In[ ]:
